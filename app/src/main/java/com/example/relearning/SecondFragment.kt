@@ -1,24 +1,30 @@
 package com.example.relearning
 
 import android.os.Bundle
+import android.provider.ContactsContract.CommonDataKinds.Website.URL
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
-import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.android.volley.Request
+import com.android.volley.Response
+import com.android.volley.toolbox.StringRequest
+import com.android.volley.toolbox.Volley
+import org.json.JSONArray
+import java.net.HttpURLConnection
+import java.net.URL
 
 /**
  * A simple [Fragment] subclass as the second destination in the navigation.
  */
 class SecondFragment : Fragment() {
     lateinit var contacts: ArrayList<Contract>
-
+    lateinit var rvContacts: RecyclerView
     override fun onCreateView(
-            inflater: LayoutInflater, container: ViewGroup?,
-            savedInstanceState: Bundle?
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
     ): View? {
         // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_second, container, false)
@@ -26,20 +32,45 @@ class SecondFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val rvContacts = view.findViewById<RecyclerView>(R.id.rvContacts) as RecyclerView
+        rvContacts = view.findViewById<RecyclerView>(R.id.rvContacts) as RecyclerView
+        sendGet()
         // Initialize contacts
-        contacts = Contract.createContactsList(20)
+        contacts = Contract.createContactsList(0)
         // Create adapter passing in the sample user data
-        val adapter = ContactsAdapter(contacts)
-        // Attach the adapter to the recyclerview to populate items
-        rvContacts.adapter = adapter
-        // Set layout manager to position the items
-        rvContacts.layoutManager = LinearLayoutManager(this.context)
-        contacts.add(0, Contract("Barney", true))
-// Notify the adapter that an item was inserted at position 0
-        adapter.notifyItemInserted(0)
-//        view.findViewById<Button>(R.id.button_second).setOnClickListener {
-//            findNavController().navigate(R.id.action_SecondFragment_to_FirstFragment)
-//        }
+//        val adapter = ContactsAdapter(contacts)
+//        // Attach the adapter to the recyclerview to populate items
+//        rvContacts.adapter = adapter
+//        // Set layout manager to position the items
+//        rvContacts.layoutManager = LinearLayoutManager(this.context)
+
+//        // Notify the adapter that an item was inserted at position 0
+//        adapter.notifyItemInserted(0)
+    }
+
+    private fun sendGet(){
+
+        val queue = Volley.newRequestQueue(this.context)
+        val url = "https://jsonplaceholder.typicode.com/albums"
+        var i = 0
+        // Request a string response from the provided URL.
+        val stringRequest = StringRequest(Request.Method.GET, url, { response ->
+            val jsonData:JSONArray = JSONArray(response)
+            while(i < jsonData.length()){
+                contacts.add(0, Contract(jsonData.getJSONObject(i).getString("title"), true))
+                val adapter = ContactsAdapter(contacts)
+                // Attach the adapter to the recyclerview to populate items
+                rvContacts.adapter = adapter
+                // Set layout manager to position the items
+                rvContacts.layoutManager = LinearLayoutManager(this.context)
+
+                // Notify the adapter that an item was inserted at position 0
+                adapter.notifyItemInserted(0)
+                i++
+            }
+            // Display the first 500 characters of the response string.
+            //println("Response is: ${response.substring(0, 500)}")
+        }, { println("That didn't work!") })
+        // Add the request to the RequestQueue.
+        val add = queue.add(stringRequest)
     }
 }
